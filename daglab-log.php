@@ -3,6 +3,7 @@
 /**
  * Plugin Name: Daggerhart Lab - Error Logging
  * Plugin URI: https://github.com/daggerhartlab/daglab-log
+ * GitHub Plugin URI: daggerhartlab/daglab-log
  * Description: Logging plugin for WordPress.
  * Version: 1.0.0
  * Author: Daggerhart Lab

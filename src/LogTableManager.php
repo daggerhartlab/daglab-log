@@ -83,16 +83,31 @@ class LogTableManager {
 	public static function createIndexes($table_name): void {
 		global $wpdb;
 
-		// Additional composite indexes for common queries
+		// Additional composite indexes for common queries.
 		$indexes = [
-			"CREATE INDEX IF NOT EXISTS idx_recent_errors ON $table_name (timestamp DESC, severity)",
-			"CREATE INDEX IF NOT EXISTS idx_user_errors ON $table_name (user_id, severity, timestamp DESC)",
-			"CREATE INDEX IF NOT EXISTS idx_error_frequency ON $table_name (level, message(100), timestamp)",
-			"CREATE INDEX IF NOT EXISTS idx_location_errors ON $table_name (location(100), timestamp DESC)"
+			'idx_recent_errors' => "CREATE INDEX idx_recent_errors ON $table_name (timestamp DESC, severity)",
+			'idx_user_errors' => "CREATE INDEX idx_user_errors ON $table_name (user_id, severity, timestamp DESC)",
+			'idx_error_frequency' => "CREATE INDEX idx_error_frequency ON $table_name (level, message(100), timestamp)",
+			'idx_location_errors' => "CREATE INDEX idx_location_errors ON $table_name (location(100), timestamp DESC)",
 		];
 
-		foreach ($indexes as $index_sql) {
-			$wpdb->query($index_sql);
+		foreach ($indexes as $index_name => $index) {
+			// Check if the index already exists.
+			$index_exists = $wpdb->get_var($wpdb->prepare("
+	            SELECT COUNT(*)
+	            FROM information_schema.statistics
+	            WHERE table_schema = %s
+	            AND table_name = %s
+	            AND index_name = %s
+	        ", DB_NAME, $table_name, $index_name));
+
+			// Create index only if it doesn't exist.
+			if (!$index_exists) {
+				$result = $wpdb->query($index);
+				if ($result === false) {
+					error_log("Failed to create index {$index_name}: " . $wpdb->last_error);
+				}
+			}
 		}
 	}
 

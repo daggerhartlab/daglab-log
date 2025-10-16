@@ -1,0 +1,197 @@
+:root {
+	--log-level-fatal-bg: #fff5f5;
+	--log-level-fatal-text: #780000;
+	--log-level-error-bg: #fff8eb;
+	--log-level-error-text: #9a3c00;
+	--log-level-warning-bg: #ffe;
+	--log-level-warning-text: #968f00;
+	--log-level-notice-bg: #f2ffff;
+	--log-level-notice-text: #00378c;
+	--log-level-info-bg: #efefef;
+	--log-level-info-text: #000;
+	--log-level-debug-bg: #fff;
+	--log-level-debug-text: #292929;
+}
+
+.error-log-filters {
+	margin: 20px 0;
+	padding: 15px;
+	background: #f9f9f9;
+	border-radius: 5px;
+}
+.filter-form {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.error-log-stats {
+	margin: 20px 0;
+}
+.stats-grid {
+	display: flex;
+	gap: 15px;
+	flex-wrap: wrap;
+}
+.stat-item {
+	background: white;
+	padding: 15px;
+	border-radius: 5px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	text-align: center;
+	min-width: 100px;
+}
+.stat-number {
+	font-size: 24px;
+	font-weight: bold;
+	margin-bottom: 5px;
+}
+.stat-fatal {
+	border-top: 2px solid var(--log-level-fatal-text);
+	background-color: var(--log-level-fatal-bg);
+	color: var(--log-level-fatal-text);
+}
+.stat-error {
+	border-top: 2px solid var(--log-level-error-text);
+	background-color: var(--log-level-error-bg);
+	color: var(--log-level-error-text);
+}
+.stat-warning {
+	border-top: 2px solid var(--log-level-warning-text);
+	background-color: var(--log-level-warning-bg);
+	color: var(--log-level-warning-text);
+}
+.stat-notice {
+	border-top: 2px solid var(--log-level-notice-text);
+	background-color: var(--log-level-notice-bg);
+	color: var(--log-level-notice-text);
+}
+.stat-info {
+	border-top: 2px solid var(--log-level-info-text);
+	background-color: var(--log-level-info-bg);
+	color: var(--log-level-info-text);
+}
+.stat-debug {
+	border-top: 2px solid var(--log-level-debug-text);
+	background-color: var(--log-level-debug-bg);
+	color: var(--log-level-debug-text);
+}
+
+tr.log-level-fatal td.log-level {
+	background-color: var(--log-level-fatal-bg);
+	color: var(--log-level-fatal-text);
+}
+tr.log-level-error td.log-level {
+	background-color: var(--log-level-error-bg);
+	color: var(--log-level-error-text);
+}
+tr.log-level-warning td.log-level {
+	background-color: var(--log-level-warning-bg);
+	color: var(--log-level-warning-text);
+}
+tr.log-level-notice td.log-level {
+	background-color: var(--log-level-notice-bg);
+	color: var(--log-level-notice-text);
+}
+tr.log-level-info td.log-level {
+	background-color: var(--log-level-info-bg);
+	color: var(--log-level-info-text);
+}
+tr.log-level-debug td.log-level {
+	background-color: var(--log-level-debug-bg);
+	color: var(--log-level-debug-text);
+}
+
+.error-logs-table .log-message {
+	max-width: 400px;
+}
+.message-preview {
+	margin-bottom: 5px;
+}
+details.show-full-message summary {
+	color: #2271b1;
+}
+.full-message {
+	margin-top: 10px;
+}
+.full-message pre {
+	background: #f8f9fa;
+	padding: 10px;
+	border-radius: 3px;
+	font-size: 12px;
+	max-height: 200px;
+	overflow-y: auto;
+}
+.toggle-full-message {
+	color: #0073aa;
+}
+
+.log-location {
+	font-size: 12px;
+}
+.hostname {
+	color: #666;
+}
+
+@media (max-width: 782px) {
+	.filter-form { flex-direction: column; align-items: stretch; }
+	.stats-grid { justify-content: center; }
+	.error-logs-table { font-size: 13px; }
+}
+
+/*
+ * Log Message Page
+ */
+.log-detail-container {
+	background: white;
+	padding: 20px;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	margin-top: 20px;
+}
+
+.log-message-full {
+	max-width: 100%;
+}
+
+.log-message-full pre {
+	background: #f8f9fa;
+	padding: 15px;
+	border: 1px solid #e1e5e9;
+	border-radius: 4px;
+	font-size: 13px;
+	line-height: 1.5;
+	max-height: 400px;
+	overflow-y: auto;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+
+.severity-badge {
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	font-weight: bold;
+	text-transform: uppercase;
+}
+
+.log-actions {
+	margin-top: 20px;
+	padding-top: 15px;
+	border-top: 1px solid #e1e5e9;
+}
+
+.log-actions .button {
+	margin-right: 10px;
+}
+
+.form-table th {
+	width: 150px;
+	vertical-align: top;
+	padding-top: 15px;
+}
+
+.form-table td {
+	padding-top: 15px;
+}

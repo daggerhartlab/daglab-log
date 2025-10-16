@@ -1,0 +1,16 @@
+{
+    "name": "daggerhartlab/daglab-log",
+    "description": "WordPress logging.",
+    "autoload": {
+        "psr-4": {
+            "DagLabLog\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Jonathan Daggerhart",
+            "email": "jonathan@daggerhartlab.com"
+        }
+    ],
+    "require": {}
+}

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Plugin Name: DagLab Log
+ * Plugin Name: Daggerhart Lab - Error Logging
  * Plugin URI: https://github.com/daggerhartlab/daglab-log
  * Description: Logging plugin for WordPress.
  * Version: 1.0.0

@@ -70,7 +70,7 @@ class LogTableManager {
 			error_log("Error Log Table: Failed to create table $table_name");
 		} else {
 			// Set the database version for future upgrades.
-			add_option('error_log_table_version',  static::VERSION);
+			add_option(static::VERSION_OPTION, static::VERSION);
 		}
 
 		// Create indexes separately if needed (sometimes dbDelta misses them)

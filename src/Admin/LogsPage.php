@@ -277,18 +277,20 @@ class LogsPage {
 		$table_name = LogTableManager::getTableName();
 		$offset = ($page - 1) * $per_page;
 
-		$where = $channel_filter || $level_filter ? 'WHERE' : '';
+		$where_clauses = [];
 		$where_values = [];
 
 		if ($channel_filter) {
-			$where .= ' channel = %s';
+			$where_clauses[] = 'channel = %s';
 			$where_values[] = $channel_filter;
 		}
 
 		if ($level_filter) {
-			$where .= ' level = %s';
+			$where_clauses[] = 'level = %s';
 			$where_values[] = $level_filter;
 		}
+
+		$where = !empty($where_clauses) ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
 
 		$sql = "SELECT * FROM $table_name $where ORDER BY timestamp DESC LIMIT %d OFFSET %d";
 		$where_values[] = $per_page;

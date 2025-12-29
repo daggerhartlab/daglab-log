@@ -46,7 +46,16 @@ class Logger {
 			'timestamp' => current_time('mysql', true), // GMT time.
 		];
 
-		$wpdb->insert(LogTableManager::getTableName(), $data);
+		$result = $wpdb->insert(LogTableManager::getTableName(), $data);
+
+		if ($result === false) {
+			// Fallback to error_log to avoid losing critical error information
+			error_log(sprintf(
+				'DagLab Log: Failed to insert log entry. Error: %s. Message: %s',
+				$wpdb->last_error,
+				substr($message, 0, 200)
+			));
+		}
 	}
 
 	/**

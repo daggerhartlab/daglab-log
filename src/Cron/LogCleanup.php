@@ -18,7 +18,7 @@ class LogCleanup {
 		add_action(static::CRON_HOOK, [ $plugin, 'process' ] );
 
 		// Clean up on plugin deactivation
-		register_deactivation_hook(__FILE__, [ $plugin, 'unscheduleJob' ] );
+		register_deactivation_hook(DAGLAB_LOG_PLUGIN_FILE, [ $plugin, 'unscheduleJob' ] );
 	}
 
 	/**
@@ -51,18 +51,27 @@ class LogCleanup {
 			return 0;
 		}
 
-		// Delete oldest entries.
+		// Delete oldest entries using two-step approach for MySQL compatibility.
 		$delete_count = $current_count - $max_entries;
-		$deleted = $wpdb->query($wpdb->prepare("
-            DELETE FROM $table_name
-            WHERE id IN (
-                SELECT id FROM (
-                    SELECT id FROM $table_name
-                    WHERE saved = 0
-                    ORDER BY timestamp ASC
-                    LIMIT %d
-                ) AS temp_table
-            )", $delete_count));
+
+		// First, get the IDs to delete
+		$ids_to_delete = $wpdb->get_col($wpdb->prepare(
+			"SELECT id FROM $table_name
+			 WHERE saved = 0
+			 ORDER BY timestamp ASC
+			 LIMIT %d",
+			$delete_count
+		));
+
+		// Then delete them if any found
+		$deleted = 0;
+		if (!empty($ids_to_delete)) {
+			$ids_placeholder = implode(',', array_fill(0, count($ids_to_delete), '%d'));
+			$deleted = $wpdb->query($wpdb->prepare(
+				"DELETE FROM $table_name WHERE id IN ($ids_placeholder)",
+				...$ids_to_delete
+			));
+		}
 
 		// Log the cleanup activity
 		if ($deleted > 0) {

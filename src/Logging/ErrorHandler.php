@@ -11,6 +11,13 @@ class ErrorHandler
 	private bool $active = false;
 
 	/**
+	 * Prevent infinite loop if logging itself causes an error.
+	 *
+	 * @var bool
+	 */
+	private static bool $isLogging = false;
+
+	/**
 	 * Store the previously set error handler for chaining.
 	 *
 	 * @var null|callable|callable-string
@@ -157,41 +164,53 @@ class ErrorHandler
 	 * Log error with custom formatting.
 	 */
 	private function logError(int $severity, string $message, string $file, int $line, $trace = null, $type = 'ERROR'): void {
-		// Prevent noise from logs on favicon and 404 pages.
-		if (
-			$this->isFaviconRequest() ||
-			$this->isFaviconRelatedError($message, $file) ||
-			is_404()
-		) {
+		// Prevent infinite loop if logging itself causes an error
+		if (self::$isLogging) {
+			error_log('DagLab Log: Prevented infinite loop in error handler');
 			return;
 		}
 
-		// Create log entry
-		$logEntry = sprintf(
-			"%s in %s on line %d",
-			$message,
-			$file,
-			$line
-		);
+		self::$isLogging = true;
 
-		// Add stack trace if available
-		if ($trace) {
-			$logEntry .= "\nStack trace:\n" . $trace;
+		try {
+			// Prevent noise from logs on favicon and 404 pages.
+			if (
+				$this->isFaviconRequest() ||
+				$this->isFaviconRelatedError($message, $file) ||
+				is_404()
+			) {
+				return;
+			}
+
+			// Create log entry
+			$logEntry = sprintf(
+				"%s in %s on line %d",
+				$message,
+				$file,
+				$line
+			);
+
+			// Add stack trace if available
+			if ($trace) {
+				$logEntry .= "\nStack trace:\n" . $trace;
+			}
+
+			// Add request info if available
+			$requestUri = $this->logger->getServerVar('REQUEST_URI');
+			if (!empty($requestUri)) {
+				$requestMethod = $this->logger->getServerVar('REQUEST_METHOD', 'UNKNOWN');
+				$logEntry .= "\nRequest: " . $requestMethod . ' ' . $requestUri;
+			}
+
+			$this->logger->writeLog(
+				'php',
+				ErrorSeverityManager::getLogLevel($severity),
+				$logEntry,
+				$severity
+			);
+		} finally {
+			self::$isLogging = false;
 		}
-
-		// Add request info if available
-		$requestUri = $this->logger->getServerVar('REQUEST_URI');
-		if (!empty($requestUri)) {
-			$requestMethod = $this->logger->getServerVar('REQUEST_METHOD', 'UNKNOWN');
-			$logEntry .= "\nRequest: " . $requestMethod . ' ' . $requestUri;
-		}
-
-		$this->logger->writeLog(
-			'php',
-			ErrorSeverityManager::getLogLevel($severity),
-			$logEntry,
-			$severity
-		);
 	}
 
 	/**

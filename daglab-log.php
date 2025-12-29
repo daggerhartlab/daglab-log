@@ -16,9 +16,8 @@
 define('DAGLAB_LOG_PLUGIN_FILE', __FILE__);
 require_once __DIR__ . '/vendor/autoload.php';
 
-// Register activation/deactivation hooks
+// Register activation hook
 register_activation_hook(__FILE__, '\DagLabLog\LogTableManager::createTable');
-register_deactivation_hook(__FILE__, '\DagLabLog\LogTableManager::dropTable');
 
 // Check for table upgrades.
 add_action('plugins_loaded', '\DagLabLog\LogTableManager::maybeUpdate');
@@ -29,26 +28,3 @@ add_action('plugins_loaded', '\DagLabLog\LogTableManager::maybeUpdate');
 \DagLabLog\Admin\LogMessagePage::bootstrap();
 \DagLabLog\Cron\LogCleanup::bootstrap();
 \DagLabLog\Cron\EmailDigest::bootstrap();
-
-if (true) {
-	// Test different types of errors
-//	trigger_error("This is a test warning", E_USER_WARNING);
-
-//	trigger_error("This is a test notice", E_USER_NOTICE);
-//
-//	try {
-//		throw new Exception("This is a test exception");
-//	} catch (Exception $e) {
-//		// Let it be handled by the exception handler
-//		throw $e;
-//	}
-
-	// Channel logger.
-//	$logger = new \DagLabLog\Logging\ChannelLogger('testing123');
-//	$logger->error('This is a test error.');
-
-	// Email digest.
-//	add_action('init', function () {
-//		(new \DagLabLog\Cron\EmailDigest())->process();
-//	});
-}

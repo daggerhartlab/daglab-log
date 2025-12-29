@@ -277,18 +277,20 @@ class LogsPage {
 		$table_name = LogTableManager::getTableName();
 		$offset = ($page - 1) * $per_page;
 
-		$where = $channel_filter || $level_filter ? 'WHERE' : '';
+		$where_clauses = [];
 		$where_values = [];
 
 		if ($channel_filter) {
-			$where .= ' channel = %s';
+			$where_clauses[] = 'channel = %s';
 			$where_values[] = $channel_filter;
 		}
 
 		if ($level_filter) {
-			$where .= ' level = %s';
+			$where_clauses[] = 'level = %s';
 			$where_values[] = $level_filter;
 		}
+
+		$where = !empty($where_clauses) ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
 
 		$sql = "SELECT * FROM $table_name $where ORDER BY timestamp DESC LIMIT %d OFFSET %d";
 		$where_values[] = $per_page;
@@ -316,26 +318,46 @@ class LogsPage {
 
 	/**
 	 * Get available log levels for filter dropdown.
+	 * Results are cached for 5 minutes to improve performance.
 	 */
 	private function getAvailableLevels(): array {
-		global $wpdb;
+		$cache_key = 'daglab_log_available_levels';
+		$levels = get_transient($cache_key);
 
-		$table_name = LogTableManager::getTableName();
-		$levels = $wpdb->get_col("SELECT DISTINCT level FROM $table_name ORDER BY severity");
+		if ($levels === false) {
+			global $wpdb;
 
-		return $levels ?: [];
+			$table_name = LogTableManager::getTableName();
+			$levels = $wpdb->get_col("SELECT DISTINCT level FROM $table_name ORDER BY severity");
+			$levels = $levels ?: [];
+
+			// Cache for 5 minutes
+			set_transient($cache_key, $levels, 5 * MINUTE_IN_SECONDS);
+		}
+
+		return $levels;
 	}
 
 	/**
 	 * Get available log channels for filter dropdown.
+	 * Results are cached for 5 minutes to improve performance.
 	 */
 	private function getAvailableChannels(): array {
-		global $wpdb;
+		$cache_key = 'daglab_log_available_channels';
+		$channels = get_transient($cache_key);
 
-		$table_name = LogTableManager::getTableName();
-		$channels = $wpdb->get_col("SELECT DISTINCT channel FROM $table_name ORDER BY channel");
+		if ($channels === false) {
+			global $wpdb;
 
-		return $channels ?: [];
+			$table_name = LogTableManager::getTableName();
+			$channels = $wpdb->get_col("SELECT DISTINCT channel FROM $table_name ORDER BY channel");
+			$channels = $channels ?: [];
+
+			// Cache for 5 minutes
+			set_transient($cache_key, $channels, 5 * MINUTE_IN_SECONDS);
+		}
+
+		return $channels;
 	}
 
 	/**
@@ -368,6 +390,10 @@ class LogsPage {
 
 		$table_name = LogTableManager::getTableName();
 		$wpdb->query("TRUNCATE TABLE $table_name");
+
+		// Clear the filter dropdown caches
+		delete_transient('daglab_log_available_levels');
+		delete_transient('daglab_log_available_channels');
 	}
 
 }

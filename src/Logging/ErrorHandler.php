@@ -85,11 +85,11 @@ class ErrorHandler
 	 * @param string $message
 	 * @param string $file
 	 * @param int $line
-	 * @param array|null $context
+	 * @param array $context
 	 *
 	 * @return false|mixed
 	 */
-	public function handleError(int $severity, string $message, string $file, int $line, ?array $context = []): mixed {
+	public function handleError(int $severity, string $message, string $file, int $line, array $context = []): mixed {
 		// Log the error with our custom handler
 		$this->logError($severity, $message, $file, $line, null, 'ERROR');
 

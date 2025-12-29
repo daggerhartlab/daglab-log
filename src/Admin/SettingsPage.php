@@ -49,6 +49,13 @@ class SettingsPage {
 			static::PAGE_SLUG
 		);
 
+		add_settings_section(
+			'daglab_log_privacy_section',
+			__('Privacy & Security Settings', 'daglab-log'),
+			[ $this, 'privacySectionCallback' ],
+			static::PAGE_SLUG
+		);
+
 		add_settings_field(
 			 'min_log_level',
 			__('Log Level', 'daglab-log'),
@@ -96,6 +103,30 @@ class SettingsPage {
 			static::PAGE_SLUG,
 			'daglab_log_main_section'
 		);
+
+		add_settings_field(
+			'anonymize_ip',
+			__('Anonymize IP Addresses', 'daglab-log'),
+			[ $this, 'fieldAnonymizeIp' ],
+			static::PAGE_SLUG,
+			'daglab_log_privacy_section'
+		);
+
+		add_settings_field(
+			'strip_query_params',
+			__('Strip Query Parameters', 'daglab-log'),
+			[ $this, 'fieldStripQueryParams' ],
+			static::PAGE_SLUG,
+			'daglab_log_privacy_section'
+		);
+
+		add_settings_field(
+			'mask_sensitive_params',
+			__('Mask Sensitive Parameters', 'daglab-log'),
+			[ $this, 'fieldMaskSensitiveParams' ],
+			static::PAGE_SLUG,
+			'daglab_log_privacy_section'
+		);
 	}
 
 	/**
@@ -114,6 +145,14 @@ class SettingsPage {
 	 */
 	public function sectionCallback(): void {
 		echo '<p>' . __('Configure the settings for error logging below:', 'daglab-log') . '</p>';
+	}
+
+	/**
+	 * Privacy settings section callback
+	 */
+	public function privacySectionCallback(): void {
+		echo '<p>' . __('Configure privacy and data protection settings:', 'daglab-log') . '</p>';
+		echo '<p class="description">' . __('These settings help comply with GDPR and prevent sensitive data exposure.', 'daglab-log') . '</p>';
 	}
 
 	/**
@@ -212,6 +251,54 @@ class SettingsPage {
 	}
 
 	/**
+	 * Anonymize IP addresses checkbox.
+	 */
+	public function fieldAnonymizeIp(): void {
+		$value = Settings::getAnonymizeIp();
+		ob_start();
+		?>
+		<input type="hidden" name="<?= $this->optionName ?>[anonymize_ip]" value="0">
+		<input id="anonymize_ip" type="checkbox" name="<?= $this->optionName ?>[anonymize_ip]" value="1" <?php checked(1, $value) ?> />
+		<label for="anonymize_ip"><?= __('Remove last octet from IPv4 addresses and last 80 bits from IPv6 addresses', 'daglab-log') ?></label>
+		<p class="description"><?= __('Helps comply with GDPR by anonymizing IP addresses. Example: 192.168.1.100 becomes 192.168.1.0', 'daglab-log') ?></p>
+		<?php
+		echo ob_get_clean();
+	}
+
+	/**
+	 * Strip query parameters checkbox.
+	 */
+	public function fieldStripQueryParams(): void {
+		$value = Settings::getStripQueryParams();
+		ob_start();
+		?>
+		<input type="hidden" name="<?= $this->optionName ?>[strip_query_params]" value="0">
+		<input id="strip_query_params" type="checkbox" name="<?= $this->optionName ?>[strip_query_params]" value="1" <?php checked(1, $value) ?> />
+		<label for="strip_query_params"><?= __('Remove all query parameters from logged URLs', 'daglab-log') ?></label>
+		<p class="description"><?= __('Warning: This removes all debugging context from URLs. Consider using "Mask Sensitive Parameters" instead.', 'daglab-log') ?></p>
+		<?php
+		echo ob_get_clean();
+	}
+
+	/**
+	 * Mask sensitive parameters checkbox.
+	 */
+	public function fieldMaskSensitiveParams(): void {
+		$value = Settings::getMaskSensitiveParams();
+		ob_start();
+		?>
+		<input type="hidden" name="<?= $this->optionName ?>[mask_sensitive_params]" value="0">
+		<input id="mask_sensitive_params" type="checkbox" name="<?= $this->optionName ?>[mask_sensitive_params]" value="1" <?php checked(1, $value) ?> />
+		<label for="mask_sensitive_params"><?= __('Redact sensitive parameters from URLs', 'daglab-log') ?></label>
+		<p class="description">
+			<?= __('Masks common sensitive parameters: token, api_key, password, secret, key, auth, access_token, refresh_token', 'daglab-log') ?><br>
+			<?= __('Example: ?token=abc123&user=john becomes ?token=[REDACTED]&user=john', 'daglab-log') ?>
+		</p>
+		<?php
+		echo ob_get_clean();
+	}
+
+	/**
 	 * Validate and sanitize settings
 	 */
 	public function settingsValidate($input): array {
@@ -284,6 +371,11 @@ class SettingsPage {
 				__('Invalid digest email address.', 'daglab-log')
 			);
 		}
+
+		// Privacy settings - cast to boolean.
+		$validated['anonymize_ip'] = (bool) ($input['anonymize_ip'] ?? false);
+		$validated['strip_query_params'] = (bool) ($input['strip_query_params'] ?? false);
+		$validated['mask_sensitive_params'] = (bool) ($input['mask_sensitive_params'] ?? false);
 
 		// Handle cron job changes.
 		$email_digest = new EmailDigest();

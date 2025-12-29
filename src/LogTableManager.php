@@ -33,7 +33,7 @@ class LogTableManager {
 		$table_name = static::getTableName();
 
 		// Check if the table already exists.
-		if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name) {
+		if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name)) === $table_name) {
 			return;
 		}
 

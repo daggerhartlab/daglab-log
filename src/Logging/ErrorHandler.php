@@ -180,8 +180,10 @@ class ErrorHandler
 		}
 
 		// Add request info if available
-		if (isset($_SERVER['REQUEST_URI'])) {
-			$logEntry .= "\nRequest: " . $_SERVER['REQUEST_METHOD'] . ' ' . $_SERVER['REQUEST_URI'];
+		$requestUri = $this->logger->getServerVar('REQUEST_URI');
+		if (!empty($requestUri)) {
+			$requestMethod = $this->logger->getServerVar('REQUEST_METHOD', 'UNKNOWN');
+			$logEntry .= "\nRequest: " . $requestMethod . ' ' . $requestUri;
 		}
 
 		$this->logger->writeLog(
@@ -198,11 +200,12 @@ class ErrorHandler
 	 * @return bool
 	 */
 	private function isFaviconRequest(): bool {
-		if (!isset($_SERVER['REQUEST_URI'])) {
+		$uri = $this->logger->getServerVar('REQUEST_URI');
+		if (empty($uri)) {
 			return false;
 		}
 
-		$uri = strtolower($_SERVER['REQUEST_URI']);
+		$uri = strtolower($uri);
 
 		$favicon_indicators = [
 			'favicon.ico',

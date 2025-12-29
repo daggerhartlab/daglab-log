@@ -59,6 +59,58 @@ class Logger {
 	}
 
 	/**
+	 * Safely get and validate $_SERVER variables.
+	 *
+	 * @param string $key The $_SERVER key to retrieve
+	 * @param string $default Default value if key doesn't exist
+	 * @return string Sanitized value
+	 */
+	public function getServerVar(string $key, string $default = ''): string {
+		if (!isset($_SERVER[$key])) {
+			return $default;
+		}
+
+		$value = $_SERVER[$key];
+
+		// Sanitize based on the type of variable
+		switch ($key) {
+			case 'REQUEST_METHOD':
+				return in_array($value, ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'], true)
+					? $value
+					: $default;
+
+			case 'REQUEST_URI':
+			case 'HTTP_REFERER':
+				// Remove any null bytes and control characters
+				$value = str_replace("\0", '', $value);
+				$filtered = filter_var($value, FILTER_SANITIZE_URL);
+				return $filtered !== false ? $filtered : $default;
+
+			case 'HTTP_HOST':
+				// Validate hostname format
+				$value = str_replace("\0", '', $value);
+				$filtered = filter_var($value, FILTER_SANITIZE_URL);
+				return $filtered !== false ? $filtered : $default;
+
+			case 'HTTPS':
+				return in_array(strtolower($value), ['on', '1', 'true', 'yes'], true) ? 'on' : 'off';
+
+			case 'HTTP_X_FORWARDED_FOR':
+			case 'REMOTE_ADDR':
+				// Sanitize IP addresses
+				$value = sanitize_text_field($value);
+				// For X-Forwarded-For, take only the first IP
+				if ($key === 'HTTP_X_FORWARDED_FOR' && str_contains($value, ',')) {
+					$value = trim(explode(',', $value)[0]);
+				}
+				return $value;
+
+			default:
+				return sanitize_text_field($value);
+		}
+	}
+
+	/**
 	 * Truncate text to a specified length.
 	 */
 	private function truncateText($text, $length) {
@@ -69,19 +121,23 @@ class Logger {
 	 * Get current URL.
 	 */
 	private function getCurrentUrl() {
-		if (!isset($_SERVER['HTTP_HOST']) || !isset($_SERVER['REQUEST_URI'])) {
+		$host = $this->getServerVar('HTTP_HOST');
+		$uri = $this->getServerVar('REQUEST_URI');
+
+		if (empty($host) || empty($uri)) {
 			return null;
 		}
 
-		$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-		return $this->truncateText( $protocol . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'], 500);
+		$protocol = ($this->getServerVar('HTTPS') === 'on') ? 'https' : 'http';
+		return $this->truncateText($protocol . '://' . $host . $uri, 500);
 	}
 
 	/**
 	 * Get referer.
 	 */
 	private function getReferer() {
-		return isset($_SERVER['HTTP_REFERER']) ? $this->truncateText($_SERVER['HTTP_REFERER'], 500) : null;
+		$referer = $this->getServerVar('HTTP_REFERER');
+		return !empty($referer) ? $this->truncateText($referer, 500) : null;
 	}
 
 	/**
@@ -89,11 +145,15 @@ class Logger {
 	 */
 	private function getVisitorHostname(): ?string {
 		$hostnames = [];
-		if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-			$hostnames[] = $_SERVER['HTTP_X_FORWARDED_FOR'];
+
+		$forwarded = $this->getServerVar('HTTP_X_FORWARDED_FOR');
+		if (!empty($forwarded)) {
+			$hostnames[] = $forwarded;
 		}
-		if (isset($_SERVER['REMOTE_ADDR'])) {
-			$hostnames[] = $_SERVER['REMOTE_ADDR'];
+
+		$remote = $this->getServerVar('REMOTE_ADDR');
+		if (!empty($remote)) {
+			$hostnames[] = $remote;
 		}
 
 		$hostname = implode(', ', $hostnames);

@@ -20,7 +20,7 @@ class LogMessagePage {
 	 */
 	public function hookAdminMenu(): void {
 		add_submenu_page(
-			null, // Don't add the page to any menu.
+			'none', // Don't add the page to any menu.
 			'Error Log Detail',
 			'Error Log Detail',
 			$this->capability,

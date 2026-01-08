@@ -6,7 +6,7 @@
  * GitHub Plugin URI: daggerhartlab/daglab-log
  * Primary Branch: main
  * Description: Logging plugin for WordPress.
- * Version: 1.0.4
+ * Version: 1.1.0
  * Author: Daggerhart Lab
  * Author URI: https://daggerhartlab.com
  * License: GPL-3.0+

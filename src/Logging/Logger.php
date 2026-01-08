@@ -128,7 +128,7 @@ class Logger {
 
 		// Option 2: Mask sensitive query parameters
 		if (Settings::getMaskSensitiveParams()) {
-			$sensitive_params = [
+			$sensitive_params = array_merge([
 				'token',
 				'api_key',
 				'apikey',
@@ -139,7 +139,7 @@ class Logger {
 				'auth',
 				'access_token',
 				'refresh_token'
-			];
+			], Settings::getAdditionalSensitiveParams());
 
 			$parsed = parse_url($url);
 

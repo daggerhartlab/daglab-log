@@ -195,3 +195,13 @@ details.show-full-message summary {
 .form-table td {
 	padding-top: 15px;
 }
+
+/**
+ * Settings page.
+ */
+textarea.settings-textarea {
+	display: block;
+	min-height: 120px;
+	width: 400px;
+	max-width: 100%;
+}

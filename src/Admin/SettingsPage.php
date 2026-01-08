@@ -127,6 +127,14 @@ class SettingsPage {
 			static::PAGE_SLUG,
 			'daglab_log_privacy_section'
 		);
+
+		add_settings_field(
+			'additional_sensitive_params',
+			__('Additional Sensitive Parameters', 'daglab-log'),
+			[ $this, 'fieldAdditionalSensitiveParams' ],
+			static::PAGE_SLUG,
+			'daglab_log_privacy_section'
+		);
 	}
 
 	/**
@@ -292,7 +300,24 @@ class SettingsPage {
 		<label for="mask_sensitive_params"><?= __('Redact sensitive parameters from URLs', 'daglab-log') ?></label>
 		<p class="description">
 			<?= __('Masks common sensitive parameters: token, api_key, password, secret, key, auth, access_token, refresh_token', 'daglab-log') ?><br>
-			<?= __('Example: ?token=abc123&user=john becomes ?token=[REDACTED]&user=john', 'daglab-log') ?>
+			<?= __('Example: ?token=abc123&user=john becomes ?token=*****&user=john', 'daglab-log') ?>
+		</p>
+		<?php
+		echo ob_get_clean();
+	}
+
+	/**
+	 * Mask sensitive parameters checkbox.
+	 */
+	public function fieldAdditionalSensitiveParams(): void {
+		$value = Settings::getAdditionalSensitiveParams();
+        $value_string = implode("\n", $value);
+		ob_start();
+		?>
+        <label for="additional_sensitive_params"><?= __('Redact additional sensitive parameters from URLs.', 'daglab-log') ?></label>
+        <textarea class="settings-textarea" id="additional_sensitive_params" name="<?= $this->optionName ?>[additional_sensitive_params]"><?= esc_textarea($value_string) ?></textarea>
+		<p class="description">
+			<?= __('Add additional parameters that should be masked in the logs. One parameter per line.', 'daglab-log') ?><br>
 		</p>
 		<?php
 		echo ob_get_clean();
@@ -376,6 +401,7 @@ class SettingsPage {
 		$validated['anonymize_ip'] = (bool) ($input['anonymize_ip'] ?? false);
 		$validated['strip_query_params'] = (bool) ($input['strip_query_params'] ?? false);
 		$validated['mask_sensitive_params'] = (bool) ($input['mask_sensitive_params'] ?? false);
+        $validated['additional_sensitive_params'] = sanitize_textarea_field(str_replace("\r", '', trim($input['additional_sensitive_params'])));
 
 		// Handle cron job changes.
 		$email_digest = new EmailDigest();

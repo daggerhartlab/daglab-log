@@ -13,9 +13,10 @@ class Settings {
 		'digest_min_log_level' => 'error',
 		'digest_email' => '',
 		// Privacy settings
-		'anonymize_ip' => false,           // OFF by default (preserve existing behavior)
-		'strip_query_params' => false,     // OFF by default (preserve debugging context)
-		'mask_sensitive_params' => true,   // ON by default (safe default - protects tokens/keys)
+		'anonymize_ip' => false,           // OFF by default (preserve existing behavior).
+		'strip_query_params' => false,     // OFF by default (preserve debugging context).
+		'mask_sensitive_params' => true,   // ON by default (safe default - protects tokens/keys).
+		'additional_sensitive_params' => '',
 	];
 
 	public static function all(): array {
@@ -56,6 +57,10 @@ class Settings {
 
 	public static function getMaskSensitiveParams(): bool {
 		return self::all()['mask_sensitive_params'];
+	}
+
+	public static function getAdditionalSensitiveParams(): array {
+		return array_filter(explode("\n", self::all()['additional_sensitive_params']));
 	}
 
 }

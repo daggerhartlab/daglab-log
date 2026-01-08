@@ -153,7 +153,7 @@ class Logger {
 			// Mask sensitive parameters
 			foreach ($sensitive_params as $param) {
 				if (isset($params[$param])) {
-					$params[$param] = '[REDACTED]';
+					$params[$param] = '*****';
 				}
 			}
 
@@ -228,14 +228,14 @@ class Logger {
 	/**
 	 * Truncate text to a specified length.
 	 */
-	private function truncateText($text, $length) {
+	private function truncateText($text, $length): string {
 		return mb_strlen($text) > $length ? mb_substr($text, 0, $length - 3) . '...' : $text;
 	}
 
 	/**
 	 * Get current URL.
 	 */
-	private function getCurrentUrl() {
+	public function getCurrentUrl(): ?string {
 		$host = $this->getServerVar('HTTP_HOST');
 		$uri = $this->getServerVar('REQUEST_URI');
 
@@ -251,7 +251,7 @@ class Logger {
 	/**
 	 * Get referer.
 	 */
-	private function getReferer() {
+	private function getReferer(): ?string {
 		$referer = $this->getServerVar('HTTP_REFERER');
 		return !empty($referer) ? $this->truncateText($this->sanitizeUrl($referer), 500) : null;
 	}

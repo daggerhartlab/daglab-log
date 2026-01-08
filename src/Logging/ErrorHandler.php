@@ -172,12 +172,13 @@ class ErrorHandler
 
 		self::$isLogging = true;
 
+		global $wp_query;
 		try {
 			// Prevent noise from logs on favicon and 404 pages.
 			if (
 				$this->isFaviconRequest() ||
 				$this->isFaviconRelatedError($message, $file) ||
-				is_404()
+				(isset($wp_query) && $wp_query->is_404())
 			) {
 				return;
 			}
@@ -196,7 +197,7 @@ class ErrorHandler
 			}
 
 			// Add request info if available
-			$requestUri = $this->logger->getServerVar('REQUEST_URI');
+			$requestUri = $this->logger->getCurrentUrl();
 			if (!empty($requestUri)) {
 				$requestMethod = $this->logger->getServerVar('REQUEST_METHOD', 'UNKNOWN');
 				$logEntry .= "\nRequest: " . $requestMethod . ' ' . $requestUri;
@@ -208,6 +209,10 @@ class ErrorHandler
 				$logEntry,
 				$severity
 			);
+
+			// Delete transients so new levels and channels appear on logs page.
+			delete_transient('daglab_log_available_levels');
+			delete_transient('daglab_log_available_channels');
 		} finally {
 			self::$isLogging = false;
 		}

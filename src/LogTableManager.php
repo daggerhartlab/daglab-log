@@ -115,12 +115,11 @@ class LogTableManager {
 	}
 
 	/**
-	 * Plugin deactivation hook - optionally remove table.
+	 * Plugin uninstall hook.
 	 */
 	public static function dropTable(): void {
 		global $wpdb;
 
-		// Only uncomment this if you want to remove data on deactivation
 		$table_name = static::getTableName();
 		$wpdb->query("DROP TABLE IF EXISTS $table_name");
 		delete_option(static::VERSION_OPTION);

@@ -33,7 +33,7 @@ class LogTableManager {
 		$table_name = static::getTableName();
 
 		// Check if the table already exists.
-		if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name) {
+		if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name)) === $table_name) {
 			return;
 		}
 
@@ -70,7 +70,7 @@ class LogTableManager {
 			error_log("Error Log Table: Failed to create table $table_name");
 		} else {
 			// Set the database version for future upgrades.
-			add_option('error_log_table_version',  static::VERSION);
+			add_option(static::VERSION_OPTION, static::VERSION);
 		}
 
 		// Create indexes separately if needed (sometimes dbDelta misses them)
@@ -79,31 +79,34 @@ class LogTableManager {
 
 	/**
 	 * Create additional indexes for better performance.
+	 * Compatible with MySQL 5.6+ by checking index existence before creation.
 	 */
 	public static function createIndexes($table_name): void {
 		global $wpdb;
 
 		// Additional composite indexes for common queries.
+		// Note: Structure separates index name from column definition for clarity
 		$indexes = [
-			'idx_recent_errors' => "CREATE INDEX idx_recent_errors ON $table_name (timestamp DESC, severity)",
-			'idx_user_errors' => "CREATE INDEX idx_user_errors ON $table_name (user_id, severity, timestamp DESC)",
-			'idx_error_frequency' => "CREATE INDEX idx_error_frequency ON $table_name (level, message(100), timestamp)",
-			'idx_location_errors' => "CREATE INDEX idx_location_errors ON $table_name (location(100), timestamp DESC)",
+			'idx_recent_errors' => "(timestamp DESC, severity)",
+			'idx_user_errors' => "(user_id, severity, timestamp DESC)",
+			'idx_error_frequency' => "(level, message(100), timestamp)",
+			'idx_location_errors' => "(location(100), timestamp DESC)",
 		];
 
-		foreach ($indexes as $index_name => $index) {
-			// Check if the index already exists.
+		foreach ($indexes as $index_name => $columns) {
+			// Check if the index already exists (compatible with all MySQL versions).
 			$index_exists = $wpdb->get_var($wpdb->prepare("
 	            SELECT COUNT(*)
 	            FROM information_schema.statistics
-	            WHERE table_schema = %s
+	            WHERE table_schema = DATABASE()
 	            AND table_name = %s
 	            AND index_name = %s
-	        ", DB_NAME, $table_name, $index_name));
+	        ", $table_name, $index_name));
 
-			// Create index only if it doesn't exist.
+			// Create index only if it doesn't exist (avoids IF NOT EXISTS syntax).
 			if (!$index_exists) {
-				$result = $wpdb->query($index);
+				$sql = "CREATE INDEX {$index_name} ON {$table_name} {$columns}";
+				$result = $wpdb->query($sql);
 				if ($result === false) {
 					error_log("Failed to create index {$index_name}: " . $wpdb->last_error);
 				}
@@ -112,12 +115,11 @@ class LogTableManager {
 	}
 
 	/**
-	 * Plugin deactivation hook - optionally remove table.
+	 * Plugin uninstall hook.
 	 */
 	public static function dropTable(): void {
 		global $wpdb;
 
-		// Only uncomment this if you want to remove data on deactivation
 		$table_name = static::getTableName();
 		$wpdb->query("DROP TABLE IF EXISTS $table_name");
 		delete_option(static::VERSION_OPTION);

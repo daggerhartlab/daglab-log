@@ -11,6 +11,13 @@ class ErrorHandler
 	private bool $active = false;
 
 	/**
+	 * Prevent infinite loop if logging itself causes an error.
+	 *
+	 * @var bool
+	 */
+	private static bool $isLogging = false;
+
+	/**
 	 * Store the previously set error handler for chaining.
 	 *
 	 * @var null|callable|callable-string
@@ -85,11 +92,11 @@ class ErrorHandler
 	 * @param string $message
 	 * @param string $file
 	 * @param int $line
-	 * @param array|null $context
+	 * @param array $context
 	 *
 	 * @return false|mixed
 	 */
-	public function handleError(int $severity, string $message, string $file, int $line, ?array $context = []): mixed {
+	public function handleError(int $severity, string $message, string $file, int $line, array $context = []): mixed {
 		// Log the error with our custom handler
 		$this->logError($severity, $message, $file, $line, null, 'ERROR');
 
@@ -157,39 +164,58 @@ class ErrorHandler
 	 * Log error with custom formatting.
 	 */
 	private function logError(int $severity, string $message, string $file, int $line, $trace = null, $type = 'ERROR'): void {
-		// Prevent noise from logs on favicon and 404 pages.
-		if (
-			$this->isFaviconRequest() ||
-			$this->isFaviconRelatedError($message, $file) ||
-			is_404()
-		) {
+		// Prevent infinite loop if logging itself causes an error
+		if (self::$isLogging) {
+			error_log('DagLab Log: Prevented infinite loop in error handler');
 			return;
 		}
 
-		// Create log entry
-		$logEntry = sprintf(
-			"%s in %s on line %d",
-			$message,
-			$file,
-			$line
-		);
+		self::$isLogging = true;
 
-		// Add stack trace if available
-		if ($trace) {
-			$logEntry .= "\nStack trace:\n" . $trace;
+		global $wp_query;
+		try {
+			// Prevent noise from logs on favicon and 404 pages.
+			if (
+				$this->isFaviconRequest() ||
+				$this->isFaviconRelatedError($message, $file) ||
+				(isset($wp_query) && $wp_query->is_404())
+			) {
+				return;
+			}
+
+			// Create log entry
+			$logEntry = sprintf(
+				"%s in %s on line %d",
+				$message,
+				$file,
+				$line
+			);
+
+			// Add stack trace if available
+			if ($trace) {
+				$logEntry .= "\nStack trace:\n" . $trace;
+			}
+
+			// Add request info if available
+			$requestUri = $this->logger->getCurrentUrl();
+			if (!empty($requestUri)) {
+				$requestMethod = $this->logger->getServerVar('REQUEST_METHOD', 'UNKNOWN');
+				$logEntry .= "\nRequest: " . $requestMethod . ' ' . $requestUri;
+			}
+
+			$this->logger->writeLog(
+				'php',
+				ErrorSeverityManager::getLogLevel($severity),
+				$logEntry,
+				$severity
+			);
+
+			// Delete transients so new levels and channels appear on logs page.
+			delete_transient('daglab_log_available_levels');
+			delete_transient('daglab_log_available_channels');
+		} finally {
+			self::$isLogging = false;
 		}
-
-		// Add request info if available
-		if (isset($_SERVER['REQUEST_URI'])) {
-			$logEntry .= "\nRequest: " . $_SERVER['REQUEST_METHOD'] . ' ' . $_SERVER['REQUEST_URI'];
-		}
-
-		$this->logger->writeLog(
-			'php',
-			ErrorSeverityManager::getLogLevel($severity),
-			$logEntry,
-			$severity
-		);
 	}
 
 	/**
@@ -198,11 +224,12 @@ class ErrorHandler
 	 * @return bool
 	 */
 	private function isFaviconRequest(): bool {
-		if (!isset($_SERVER['REQUEST_URI'])) {
+		$uri = $this->logger->getServerVar('REQUEST_URI');
+		if (empty($uri)) {
 			return false;
 		}
 
-		$uri = strtolower($_SERVER['REQUEST_URI']);
+		$uri = strtolower($uri);
 
 		$favicon_indicators = [
 			'favicon.ico',

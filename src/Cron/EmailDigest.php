@@ -21,7 +21,7 @@ class EmailDigest {
 		add_action(static::CRON_HOOK, [ $plugin, 'process' ] );
 
 		// Clean up on plugin deactivation
-		register_deactivation_hook(__FILE__, [ $plugin, 'unscheduleJob' ] );
+		register_deactivation_hook(DAGLAB_LOG_PLUGIN_FILE, [ $plugin, 'unscheduleJob' ] );
 	}
 
 	/**

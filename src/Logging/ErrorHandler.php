@@ -97,6 +97,21 @@ class ErrorHandler
 	 * @return false|mixed
 	 */
 	public function handleError(int $severity, string $message, string $file, int $line, array $context = []): mixed {
+		/**
+		 * Respect the @ operator.
+		 * @see https://www.php.net/manual/en/language.operators.errorcontrol.php
+		 *
+		 * Notes:
+		 * - In PHP 7, PHP temporarily sets error_reporting() to 0 when @ operator is used.
+		 * - In PHP 8, PHP temporarily sets error_reporting() to:
+		 *     E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR | E_RECOVERABLE_ERROR | E_PARSE
+		 *   when the @ operator is used.
+		 * - We can cover both cases with the bitwise check below.
+		 */
+		if (!(error_reporting() & $severity)) {
+			return false;
+		}
+
 		// Log the error with our custom handler
 		$this->logError($severity, $message, $file, $line, null, 'ERROR');
 

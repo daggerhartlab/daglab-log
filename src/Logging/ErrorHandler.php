@@ -108,12 +108,10 @@ class ErrorHandler
 		 *   when the @ operator is used.
 		 * - We can cover both cases with the bitwise check below.
 		 */
-		if (!(error_reporting() & $severity)) {
-			return false;
+		if (error_reporting() & $severity) {
+			// Log the error with our custom handler
+			$this->logError($severity, $message, $file, $line, null, 'ERROR');
 		}
-
-		// Log the error with our custom handler
-		$this->logError($severity, $message, $file, $line, null, 'ERROR');
 
 		// Chain to the previous error handler if it exists
 		if ($this->previousErrorHandler && is_callable($this->previousErrorHandler)) {

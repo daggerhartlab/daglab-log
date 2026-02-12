@@ -109,7 +109,6 @@ class ErrorHandler
 		 * - We can cover both cases with the bitwise check below.
 		 */
 		if (error_reporting() & $severity) {
-			// Log the error with our custom handler
 			$this->logError($severity, $message, $file, $line, null, 'ERROR');
 		}
 
